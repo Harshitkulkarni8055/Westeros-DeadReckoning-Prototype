@@ -162,6 +162,40 @@ for the same reason.
       stale state. Added a "← All replays" button back to the list.
 - [x] `MainNavigation` now starts at `ReplayList` instead of `Playback`.
 
+## F5 — Figma-aligned redesign — DONE
+See `FIGMA_REDESIGN_PLAN.md` for the full screen-by-screen scope call and
+the design tokens pulled from a teammate's Figma prototype ("Drift Nav").
+- [x] `theme/Color.kt` — Drift Nav brand palette (dark navy + mint accent
+      for hero/system/more screens, light surfaces for the replay list and
+      scenario playback)
+- [x] `ui/hero/HeroScreen.kt` — new landing screen, entry point before the
+      tab shell. The mock's "Start Navigation" button is dropped (no live
+      navigation exists to start) leaving only "Explore Demo"
+- [x] `ui/common/DriftBottomBar.kt` — 3-tab bottom bar (Replay / System /
+      More); the mock's Map tab is dropped, not shown disabled, since it
+      needs a real map SDK + live sensors this prototype doesn't have
+- [x] `ReplayListScreen` restyled to match "Test Scenarios" (numbered
+      badge, route label, real outage-duration subtitle, Replay pill)
+- [x] `PlaybackScreen` restyled to match the scenario-detail mock (legend
+      chips, canvas in a card, "Position Estimation" stat card, slider +
+      circular play button); canvas drawing internals (grid, A/B markers,
+      vehicle marker) unchanged from F3/earlier
+- [x] `ui/system/SystemStatusScreen.kt` — new System tab. Every row is
+      derived from `data/ActivePlaybackState.kt`, a small shared state the
+      `PlaybackViewModel` publishes to on each tick, so GNSS/Map Matching
+      really do flip based on whichever replay is open (not hardcoded
+      "Active" like the mock) -- with an explicit idle state when nothing
+      is playing
+- [x] `ui/more/MoreScreen.kt` + `HowItWorksScreen.kt` — new More tab and
+      info screen, copy rewritten to describe this prototype's actual
+      pipeline (random forest, nearest-segment snap, fixed-alpha fusion)
+      instead of the full proposal's aspirational architecture
+- [x] `libs.versions.toml`/`build.gradle.kts` — added
+      `material-icons-core` (needed for the few Material icons used;
+      three icons in the mock -- Bolt, Pause, Replay -- aren't in that
+      smaller core set and were substituted with text glyphs rather than
+      pulling in the much larger `material-icons-extended`)
+
 ## Explicitly out of scope for this frontend pass
 - Live sensor capture (accelerometer/gyro/mag/GPS) and permissions
 - TFLite model loading / on-device inference

@@ -2,6 +2,8 @@ package com.example.deadreckoning.ui.playback
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.deadreckoning.data.ActivePlaybackSnapshot
+import com.example.deadreckoning.data.ActivePlaybackState
 import com.example.deadreckoning.data.TrackRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -13,9 +15,11 @@ import kotlinx.coroutines.launch
 
 /** Drives replay of one recording's precomputed track (see
  * FRONTEND_PLAN.md) -- there is no live sensor data, just a ticker
- * advancing through the rows loaded from [TrackRepository].
+ * advancing through the rows loaded from [TrackRepository]. Also publishes
+ * to [ActivePlaybackState] so the System Status tab can show real derived
+ * status for whichever replay is open (see FIGMA_REDESIGN_PLAN.md).
  */
-class PlaybackViewModel(private val repository: TrackRepository) : ViewModel() {
+class PlaybackViewModel(private val repository: TrackRepository, private val routeLabel: String) : ViewModel() {
   private val _uiState = MutableStateFlow<PlaybackUiState>(PlaybackUiState.Loading)
   val uiState: StateFlow<PlaybackUiState> = _uiState.asStateFlow()
 
@@ -30,6 +34,20 @@ class PlaybackViewModel(private val repository: TrackRepository) : ViewModel() {
         } catch (e: Exception) {
           PlaybackUiState.Error(e.message ?: "Failed to load track")
         }
+    }
+    viewModelScope.launch {
+      uiState.collect { state ->
+        if (state is PlaybackUiState.Ready) {
+          val row = state.track.rows[state.currentIndex]
+          ActivePlaybackState.update(
+            ActivePlaybackSnapshot(
+              recordingId = state.track.recordingId,
+              routeLabel = routeLabel,
+              gpsAvailable = row.gpsAvailable,
+            )
+          )
+        }
+      }
     }
   }
 
@@ -78,6 +96,11 @@ class PlaybackViewModel(private val repository: TrackRepository) : ViewModel() {
     _uiState.value = state.copy(currentIndex = index.coerceIn(0, state.track.rows.size - 1))
   }
 
+  fun restart() {
+    seekTo(0)
+    togglePlay()
+  }
+
   fun cycleSpeed() {
     val state = _uiState.value as? PlaybackUiState.Ready ?: return
     val next = when (state.speedMultiplier) {
@@ -90,5 +113,6 @@ class PlaybackViewModel(private val repository: TrackRepository) : ViewModel() {
 
   override fun onCleared() {
     tickerJob?.cancel()
+    ActivePlaybackState.clear()
   }
 }

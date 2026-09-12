@@ -11,15 +11,26 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,12 +46,22 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.deadreckoning.data.AssetTrackRepository
+import com.example.deadreckoning.data.ReplayCatalog
 import com.example.deadreckoning.data.TrackData
 import com.example.deadreckoning.data.TrackPoint
+import com.example.deadreckoning.theme.DriftBodyText
+import com.example.deadreckoning.theme.DriftCardLight
+import com.example.deadreckoning.theme.DriftMint
+import com.example.deadreckoning.theme.DriftNavyText
+import com.example.deadreckoning.theme.DriftSurfaceLight
+import com.example.deadreckoning.ui.common.DriftBottomBar
+import com.example.deadreckoning.ui.common.MainTab
 import kotlin.math.min
 import kotlin.random.Random
 
@@ -51,35 +72,57 @@ private object TrackColors {
   val fused = Color(0xFF2E7D32)
 }
 
+// Distinct from every track color (blue/orange/green/purple) so the current
+// position always stands out from the paths and the A/B markers alike.
+private val VehicleColor = Color(0xFFFFC107)
+
 @Composable
-fun PlaybackScreen(assetFileName: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun PlaybackScreen(
+  assetFileName: String,
+  currentTab: MainTab,
+  onTabSelected: (MainTab) -> Unit,
+  onBack: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
   val context = LocalContext.current
+  val catalogEntry = remember(assetFileName) { ReplayCatalog.entries.find { it.assetFileName == assetFileName } }
+  val routeLabel = catalogEntry?.routeLabel ?: assetFileName
   val viewModel: PlaybackViewModel =
     viewModel(key = assetFileName) {
-      PlaybackViewModel(AssetTrackRepository(context.applicationContext, assetFileName))
+      PlaybackViewModel(AssetTrackRepository(context.applicationContext, assetFileName), routeLabel)
     }
   val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-  when (val state = uiState) {
-    is PlaybackUiState.Loading -> {
-      Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
+  Scaffold(
+    modifier = modifier,
+    containerColor = DriftSurfaceLight,
+    bottomBar = { DriftBottomBar(current = currentTab, onSelect = onTabSelected) },
+  ) { padding ->
+    Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+      when (val state = uiState) {
+        is PlaybackUiState.Loading -> {
+          Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+          }
+        }
+        is PlaybackUiState.Error -> {
+          Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Failed to load track: ${state.message}")
+          }
+        }
+        is PlaybackUiState.Ready -> {
+          PlaybackContent(
+            state = state,
+            catalogIndex = catalogEntry?.index ?: "--",
+            routeLabel = routeLabel,
+            onTogglePlay = viewModel::togglePlay,
+            onSeek = viewModel::seekTo,
+            onCycleSpeed = viewModel::cycleSpeed,
+            onRestart = viewModel::restart,
+            onBack = onBack,
+          )
+        }
       }
-    }
-    is PlaybackUiState.Error -> {
-      Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Failed to load track: ${state.message}")
-      }
-    }
-    is PlaybackUiState.Ready -> {
-      PlaybackContent(
-        state = state,
-        onTogglePlay = viewModel::togglePlay,
-        onSeek = viewModel::seekTo,
-        onCycleSpeed = viewModel::cycleSpeed,
-        onBack = onBack,
-        modifier = modifier,
-      )
     }
   }
 }
@@ -87,39 +130,71 @@ fun PlaybackScreen(assetFileName: String, onBack: () -> Unit, modifier: Modifier
 @Composable
 private fun PlaybackContent(
   state: PlaybackUiState.Ready,
+  catalogIndex: String,
+  routeLabel: String,
   onTogglePlay: () -> Unit,
   onSeek: (Int) -> Unit,
   onCycleSpeed: () -> Unit,
+  onRestart: () -> Unit,
   onBack: () -> Unit,
-  modifier: Modifier = Modifier,
 ) {
   val currentPoint = state.track.rows[state.currentIndex]
-  Column(modifier = modifier.fillMaxSize()) {
-    TextButton(onClick = onBack) { Text("← All replays") }
-    Text(
-      text = "IO-VNBD ${state.track.recordingId} — GPS-denied navigation replay",
-      style = MaterialTheme.typography.titleMedium,
-    )
-    Spacer(Modifier.height(8.dp))
-    TrackCanvas(
-      track = state.track,
-      currentIndex = state.currentIndex,
-      modifier = Modifier.fillMaxWidth().weight(1f),
-    )
-    Spacer(Modifier.height(8.dp))
+  Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+      TextButton(onClick = onBack) { Text("‹", fontSize = 22.sp, color = DriftNavyText) }
+      Spacer(Modifier.width(4.dp))
+      Text(
+        text = "Scenario $catalogIndex · $routeLabel",
+        color = DriftNavyText,
+        fontWeight = FontWeight.Bold,
+        fontSize = 20.sp,
+      )
+    }
+    Spacer(Modifier.height(12.dp))
     TrackLegend()
-    Spacer(Modifier.height(8.dp))
-    StatusRow(point = currentPoint)
-    Spacer(Modifier.height(8.dp))
-    PlaybackControls(
-      currentIndex = state.currentIndex,
-      totalPoints = state.track.rows.size,
-      isPlaying = state.isPlaying,
-      speedMultiplier = state.speedMultiplier,
-      onTogglePlay = onTogglePlay,
-      onSeek = onSeek,
-      onCycleSpeed = onCycleSpeed,
-    )
+    Spacer(Modifier.height(12.dp))
+    Card(
+      modifier = Modifier.fillMaxWidth().weight(1f),
+      colors = CardDefaults.cardColors(containerColor = DriftCardLight),
+      shape = RoundedCornerShape(20.dp),
+    ) {
+      TrackCanvas(track = state.track, currentIndex = state.currentIndex, modifier = Modifier.fillMaxSize().padding(8.dp))
+    }
+    Spacer(Modifier.height(12.dp))
+    Card(
+      modifier = Modifier.fillMaxWidth(),
+      colors = CardDefaults.cardColors(containerColor = DriftCardLight),
+      shape = RoundedCornerShape(20.dp),
+    ) {
+      Column(modifier = Modifier.padding(16.dp)) {
+        Text("Position Estimation", color = DriftNavyText, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(12.dp))
+        StatusRow(point = currentPoint)
+        Spacer(Modifier.height(12.dp))
+        PlaybackControls(
+          currentIndex = state.currentIndex,
+          totalPoints = state.track.rows.size,
+          isPlaying = state.isPlaying,
+          onTogglePlay = onTogglePlay,
+          onSeek = onSeek,
+        )
+      }
+    }
+    Spacer(Modifier.height(12.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+      AssistChip(
+        onClick = onRestart,
+        leadingIcon = { Text("↻", color = DriftNavyText) },
+        label = { Text("Replay") },
+        colors =
+          AssistChipDefaults.assistChipColors(
+            containerColor = DriftMint.copy(alpha = 0.15f),
+            labelColor = DriftNavyText,
+            leadingIconContentColor = DriftNavyText,
+          ),
+      )
+      TextButton(onClick = onCycleSpeed) { Text("${state.speedMultiplier}x", color = DriftNavyText, fontWeight = FontWeight.Bold) }
+    }
   }
 }
 
@@ -182,10 +257,6 @@ private fun TrackCanvas(track: TrackData, currentIndex: Int, modifier: Modifier 
     drawCircle(color = Color.White, radius = 15f, center = vehicleOffset, style = Stroke(width = 3f))
   }
 }
-
-// Distinct from every track color (blue/orange/green/purple) so the current
-// position always stands out from the paths and the A/B markers alike.
-private val VehicleColor = Color(0xFFFFC107)
 
 private fun DrawScope.drawDummyStreetGrid() {
   val gridColor = Color(0xFFBDBDBD).copy(alpha = 0.4f)
@@ -251,9 +322,9 @@ private fun TrackLegend(modifier: Modifier = Modifier) {
     modifier = modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
     horizontalArrangement = Arrangement.spacedBy(16.dp),
   ) {
-    LegendItem(TrackColors.groundTruth, "Ground truth")
-    LegendItem(TrackColors.rawDeadReckoning, "Raw dead reckoning")
-    LegendItem(TrackColors.fused, "Fused (final)")
+    LegendItem(TrackColors.groundTruth, "Ground Truth")
+    LegendItem(TrackColors.rawDeadReckoning, "Raw DR")
+    LegendItem(TrackColors.fused, "AI Fusion")
   }
 }
 
@@ -261,38 +332,24 @@ private fun TrackLegend(modifier: Modifier = Modifier) {
 private fun LegendItem(color: Color, label: String) {
   Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
     Box(modifier = Modifier.size(10.dp).background(color = color, shape = CircleShape))
-    Text(text = label, style = MaterialTheme.typography.labelSmall)
+    Text(text = label, color = DriftBodyText, style = MaterialTheme.typography.labelSmall)
   }
 }
 
 @Composable
 private fun StatusRow(point: TrackPoint, modifier: Modifier = Modifier) {
-  Column(modifier = modifier.fillMaxWidth()) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-      StatusStat(label = "Speed", value = "%.1f m/s".format(point.speedPred))
-      StatusStat(label = "Heading", value = "%.0f°".format(point.headingDeg))
-      StatusStat(label = "Confidence", value = "${(point.alpha * 100).toInt()}%")
-    }
-    Spacer(Modifier.height(8.dp))
-    val stateLabel = if (point.gpsAvailable) "GPS + Fusion" else "Dead Reckoning"
-    val stateColor = if (point.gpsAvailable) TrackColors.fused else TrackColors.rawDeadReckoning
-    AssistChip(
-      onClick = {},
-      label = { Text(stateLabel) },
-      colors =
-        AssistChipDefaults.assistChipColors(
-          containerColor = stateColor.copy(alpha = 0.15f),
-          labelColor = stateColor,
-        ),
-    )
+  Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+    StatusStat(label = "Confidence", value = "${(point.alpha * 100).toInt()}%")
+    StatusStat(label = "Speed", value = "%.1f m/s".format(point.speedPred))
+    StatusStat(label = "Heading", value = "%.0f°".format(point.headingDeg))
   }
 }
 
 @Composable
 private fun StatusStat(label: String, value: String) {
   Column(horizontalAlignment = Alignment.CenterHorizontally) {
-    Text(text = value, style = MaterialTheme.typography.titleMedium)
-    Text(text = label, style = MaterialTheme.typography.labelSmall)
+    Text(text = value, color = DriftNavyText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+    Text(text = label, color = DriftBodyText, style = MaterialTheme.typography.labelSmall)
   }
 }
 
@@ -301,21 +358,25 @@ private fun PlaybackControls(
   currentIndex: Int,
   totalPoints: Int,
   isPlaying: Boolean,
-  speedMultiplier: Int,
   onTogglePlay: () -> Unit,
   onSeek: (Int) -> Unit,
-  onCycleSpeed: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  Column(modifier = modifier.fillMaxWidth()) {
+  Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
     Slider(
       value = currentIndex.toFloat(),
       onValueChange = { onSeek(it.toInt()) },
       valueRange = 0f..(totalPoints - 1).toFloat().coerceAtLeast(0f),
+      modifier = Modifier.weight(1f),
+      colors = SliderDefaults.colors(thumbColor = DriftMint, activeTrackColor = DriftMint),
     )
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-      Button(onClick = onTogglePlay) { Text(if (isPlaying) "Pause" else "Play") }
-      TextButton(onClick = onCycleSpeed) { Text("${speedMultiplier}x") }
+    Spacer(Modifier.width(8.dp))
+    FilledIconButton(onClick = onTogglePlay, colors = IconButtonDefaults.filledIconButtonColors(containerColor = DriftMint)) {
+      if (isPlaying) {
+        Text("❚❚", color = Color.White, fontSize = 14.sp)
+      } else {
+        Icon(Icons.Filled.PlayArrow, contentDescription = "Play", tint = Color.White)
+      }
     }
   }
 }
