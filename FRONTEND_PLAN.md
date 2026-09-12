@@ -143,13 +143,31 @@ otherwise -- it was always being drawn invisibly underneath "fused".
 `demo.py`'s original matplotlib plot never showed it separately either,
 for the same reason.
 
+## F4 — Multiple replays — DONE
+- [x] Exported two more recordings the same way as S1 — `S3c` (clean
+      calibration, strong result: fused mean error 14.9m vs raw 57.5m
+      during the outage) and `S3a` (noisier heading calibration, still a
+      real win but a smaller one: fused 41.7m vs raw 73.4m) — both via
+      `prototype/export_track.py <id> --outage-start ... --outage-duration
+      30 --pre-seconds 15 --post-seconds 15`, picked from recordings with
+      clean (non-wrapping) timestamps. Copied to
+      `android/app/src/main/assets/`.
+- [x] `data/ReplayCatalog.kt` — hardcoded list of the three bundled
+      replays (title, route label, asset filename); no dynamic discovery.
+- [x] `ui/replaylist/ReplayListScreen.kt` — landing screen, one card per
+      replay.
+- [x] `Playback` nav key now carries `assetFileName`; `PlaybackScreen`
+      loads whichever asset was picked, keyed by filename so switching
+      replays gets a fresh `PlaybackViewModel`/ticker instead of reusing
+      stale state. Added a "← All replays" button back to the list.
+- [x] `MainNavigation` now starts at `ReplayList` instead of `Playback`.
+
 ## Explicitly out of scope for this frontend pass
 - Live sensor capture (accelerometer/gyro/mag/GPS) and permissions
 - TFLite model loading / on-device inference
 - Real map tiles (osmdroid/Google Maps/Mapbox) — the Canvas plot is the
   map for this prototype
-- Multi-recording picker (only S1, hardcoded asset)
-- Settings, accounts, persistence, anything beyond one replay + summary
+- Settings, accounts, persistence, anything beyond replay + summary
 - These are real frontend work for the full production app later, not
   this prototype pass.
 
