@@ -148,7 +148,7 @@ private fun RouteSummaryCard(entry: ReplayEntry, track: TrackData, onReplay: () 
   ) {
     Column(modifier = Modifier.padding(16.dp)) {
       Text(entry.routeLabel, color = DriftNavyText, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-      Text("Recorded IO-VNBD route · ${entry.conditionLabel}", color = DriftBodyText, fontSize = 13.sp)
+      Text(entry.conditionLabel, color = DriftBodyText, fontSize = 13.sp)
       Spacer(Modifier.height(12.dp))
       Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Stat("%.1f km".format(stats.distanceKm), "Distance")
