@@ -1,6 +1,7 @@
 package com.example.deadreckoning.ui.map
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -164,7 +166,10 @@ private fun OsmMapView(track: TrackData?, modifier: Modifier = Modifier) {
 
 @Composable
 private fun RouteChips(selected: ReplayEntry, onSelect: (ReplayEntry) -> Unit, modifier: Modifier = Modifier) {
-  Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+  Row(
+    modifier = modifier.horizontalScroll(rememberScrollState()),
+    horizontalArrangement = Arrangement.spacedBy(8.dp),
+  ) {
     ReplayCatalog.entries.forEach { entry ->
       FilterChip(selected = entry == selected, onClick = { onSelect(entry) }, label = { Text(entry.routeLabel) })
     }
