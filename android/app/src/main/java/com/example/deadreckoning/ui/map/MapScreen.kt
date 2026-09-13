@@ -1,7 +1,5 @@
 package com.example.deadreckoning.ui.map
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -44,7 +41,7 @@ import com.example.deadreckoning.theme.DriftSurfaceLight
 import com.example.deadreckoning.ui.common.DriftBottomBar
 import com.example.deadreckoning.ui.common.MainTab
 import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.XYTileSource
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
@@ -62,30 +59,7 @@ import kotlin.math.sqrt
  * live position marker here; that stays PlaybackScreen's job (see
  * FIGMA_REDESIGN_PLAN.md) -- this screen previews a route, it doesn't
  * play one back.
- *
- * The tile source is a label-free basemap (CARTO Positron, no text) rather
- * than standard OSM tiles: standard tiles bake real place names (this data
- * is recorded in the UK, see PLAN.md) directly into the raster image as
- * pixels, which can't be renamed in-app -- only removed. This keeps the
- * "Hyderabad"/"Bengaluru"/"Mumbai" labels in ReplayCatalog.kt from being
- * visibly contradicted by real UK town/street names on the map itself.
  */
-private val noLabelBasemap =
-  XYTileSource(
-    "CartoPositronNoLabels",
-    0,
-    19,
-    256,
-    ".png",
-    arrayOf(
-      "https://a.basemaps.cartocdn.com/light_nolabels/",
-      "https://b.basemaps.cartocdn.com/light_nolabels/",
-      "https://c.basemaps.cartocdn.com/light_nolabels/",
-      "https://d.basemaps.cartocdn.com/light_nolabels/",
-    ),
-    "© OpenStreetMap contributors, © CARTO",
-  )
-
 @Composable
 fun MapScreen(
   currentTab: MainTab,
@@ -108,15 +82,6 @@ fun MapScreen(
       Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
         OsmMapView(track = track, modifier = Modifier.fillMaxSize())
         RouteChips(selected = selected, onSelect = { selected = it }, modifier = Modifier.align(Alignment.TopCenter).padding(12.dp))
-        Text(
-          text = "© OpenStreetMap contributors, © CARTO",
-          color = DriftBodyText,
-          fontSize = 9.sp,
-          modifier =
-            Modifier.align(Alignment.BottomEnd)
-              .background(DriftCardLight.copy(alpha = 0.7f))
-              .padding(horizontal = 6.dp, vertical = 2.dp),
-        )
       }
       track?.let { RouteSummaryCard(entry = selected, track = it, onReplay = { onReplayRoute(selected.assetFileName) }) }
     }
@@ -138,7 +103,7 @@ private fun OsmMapView(track: TrackData?, modifier: Modifier = Modifier) {
         osmdroidTileCache = ctx.cacheDir
       }
       MapView(ctx).apply {
-        setTileSource(noLabelBasemap)
+        setTileSource(TileSourceFactory.MAPNIK)
         setMultiTouchControls(true)
         controller.setZoom(14.0)
       }
@@ -166,10 +131,7 @@ private fun OsmMapView(track: TrackData?, modifier: Modifier = Modifier) {
 
 @Composable
 private fun RouteChips(selected: ReplayEntry, onSelect: (ReplayEntry) -> Unit, modifier: Modifier = Modifier) {
-  Row(
-    modifier = modifier.horizontalScroll(rememberScrollState()),
-    horizontalArrangement = Arrangement.spacedBy(8.dp),
-  ) {
+  Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
     ReplayCatalog.entries.forEach { entry ->
       FilterChip(selected = entry == selected, onClick = { onSelect(entry) }, label = { Text(entry.routeLabel) })
     }
@@ -186,7 +148,7 @@ private fun RouteSummaryCard(entry: ReplayEntry, track: TrackData, onReplay: () 
   ) {
     Column(modifier = Modifier.padding(16.dp)) {
       Text(entry.routeLabel, color = DriftNavyText, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-      Text(entry.conditionLabel, color = DriftBodyText, fontSize = 13.sp)
+      Text("Recorded IO-VNBD route · ${entry.conditionLabel}", color = DriftBodyText, fontSize = 13.sp)
       Spacer(Modifier.height(12.dp))
       Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Stat("%.1f km".format(stats.distanceKm), "Distance")
