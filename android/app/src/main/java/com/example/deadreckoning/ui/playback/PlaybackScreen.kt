@@ -38,7 +38,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -75,6 +77,10 @@ private object TrackColors {
 // Distinct from every track color (blue/orange/green/purple) so the current
 // position always stands out from the paths and the A/B markers alike.
 private val VehicleColor = Color(0xFFFFC107)
+
+// Neutral dark grey for the A/B start/end waypoint markers, deliberately
+// distinct from every track color and the vehicle marker.
+private val EndpointMarkerColor = Color(0xFF37474F)
 
 @Composable
 fun PlaybackScreen(
@@ -259,31 +265,54 @@ private fun TrackCanvas(track: TrackData, currentIndex: Int, modifier: Modifier 
 }
 
 private fun DrawScope.drawDummyStreetGrid() {
-  val gridColor = Color(0xFFBDBDBD).copy(alpha = 0.4f)
-  val rng = Random(0)
-  val colSpacing = size.width / 7f
-  val rowSpacing = size.height / 9f
+  // Pale base + irregular blocks + a couple of thicker "arterial" roads and
+  // a few soft park patches -- purely decorative texture so the replay
+  // reads as "a vehicle on a map," not real road geometry (that's
+  // map_matcher.py's OSM graph, which this offline replay doesn't bundle).
+  drawRect(color = Color(0xFFF3F1F8))
 
-  for (i in 1..6) {
-    val x = i * colSpacing + rng.nextFloat() * 10f - 5f
-    drawLine(color = gridColor, start = Offset(x, 0f), end = Offset(x, size.height), strokeWidth = 2f)
+  val rng = Random(1)
+  val minorColor = Color(0xFFD6D0E0)
+  val majorColor = Color(0xFFE3C583)
+  val parkColor = Color(0xFFCFE3CB).copy(alpha = 0.7f)
+
+  var x = 0f
+  while (x < size.width) {
+    x += size.width / 7f * (0.6f + rng.nextFloat())
+    if (x < size.width) drawLine(minorColor, Offset(x, 0f), Offset(x, size.height), strokeWidth = 2f)
   }
-  for (j in 1..8) {
-    val y = j * rowSpacing + rng.nextFloat() * 10f - 5f
-    drawLine(color = gridColor, start = Offset(0f, y), end = Offset(size.width, y), strokeWidth = 2f)
+  var y = 0f
+  while (y < size.height) {
+    y += size.height / 9f * (0.6f + rng.nextFloat())
+    if (y < size.height) drawLine(minorColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 2f)
   }
+
+  drawLine(majorColor, Offset(0f, size.height * 0.32f), Offset(size.width, size.height * 0.42f), strokeWidth = 6f)
+  drawLine(majorColor, Offset(size.width * 0.62f, 0f), Offset(size.width * 0.48f, size.height), strokeWidth = 6f)
+
+  drawRoundRect(
+    color = parkColor,
+    topLeft = Offset(size.width * 0.08f, size.height * 0.62f),
+    size = Size(size.width * 0.2f, size.height * 0.16f),
+    cornerRadius = CornerRadius(14f, 14f),
+  )
+  drawRoundRect(
+    color = parkColor,
+    topLeft = Offset(size.width * 0.72f, size.height * 0.12f),
+    size = Size(size.width * 0.16f, size.height * 0.14f),
+    cornerRadius = CornerRadius(14f, 14f),
+  )
 }
 
 private fun DrawScope.drawEndpointMarker(center: Offset, label: String) {
-  val markerColor = Color(0xFF37474F)
   drawCircle(color = Color.White, radius = 24f, center = center)
-  drawCircle(color = markerColor, radius = 24f, center = center, style = Stroke(width = 4f))
+  drawCircle(color = EndpointMarkerColor, radius = 24f, center = center, style = Stroke(width = 4f))
   drawContext.canvas.nativeCanvas.drawText(
     label,
     center.x,
     center.y + 10f,
     android.graphics.Paint().apply {
-      color = markerColor.toArgb()
+      color = EndpointMarkerColor.toArgb()
       textAlign = android.graphics.Paint.Align.CENTER
       textSize = 32f
       isFakeBoldText = true
@@ -325,6 +354,8 @@ private fun TrackLegend(modifier: Modifier = Modifier) {
     LegendItem(TrackColors.groundTruth, "Ground Truth")
     LegendItem(TrackColors.rawDeadReckoning, "Raw DR")
     LegendItem(TrackColors.fused, "AI Fusion")
+    LegendItem(VehicleColor, "Current Position")
+    LegendItem(EndpointMarkerColor, "Start/End (A/B)")
   }
 }
 

@@ -6,8 +6,11 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.example.deadreckoning.ui.common.MainTab
 import com.example.deadreckoning.ui.hero.HeroScreen
+import com.example.deadreckoning.ui.map.MapScreen
 import com.example.deadreckoning.ui.more.HowItWorksScreen
 import com.example.deadreckoning.ui.more.MoreScreen
+import com.example.deadreckoning.ui.onboarding.AllSetScreen
+import com.example.deadreckoning.ui.onboarding.DeviceCheckScreen
 import com.example.deadreckoning.ui.playback.PlaybackScreen
 import com.example.deadreckoning.ui.replaylist.ReplayListScreen
 import com.example.deadreckoning.ui.system.SystemStatusScreen
@@ -20,6 +23,7 @@ fun MainNavigation() {
     backStack.clear()
     backStack.add(
       when (tab) {
+        MainTab.MAP -> MapHome
         MainTab.REPLAY -> ReplayList
         MainTab.SYSTEM -> SystemStatus
         MainTab.MORE -> More
@@ -33,6 +37,7 @@ fun MainNavigation() {
   // second entry (the open Playback screen) underneath it.
   val currentTab =
     when (backStack.lastOrNull()) {
+      is MapHome -> MainTab.MAP
       is SystemStatus -> MainTab.SYSTEM
       is More, is HowItWorks -> MainTab.MORE
       else -> MainTab.REPLAY
@@ -43,7 +48,16 @@ fun MainNavigation() {
     onBack = { backStack.removeLastOrNull() },
     entryProvider =
       entryProvider {
-        entry<Hero> { HeroScreen(onExploreDemo = { switchTab(MainTab.REPLAY) }) }
+        entry<Hero> { HeroScreen(onExploreDemo = { backStack.add(DeviceCheck) }) }
+        entry<DeviceCheck> { DeviceCheckScreen(onContinue = { backStack.add(AllSet) }) }
+        entry<AllSet> { AllSetScreen(onEnterApp = { switchTab(MainTab.MAP) }) }
+        entry<MapHome> {
+          MapScreen(
+            currentTab = currentTab,
+            onTabSelected = ::switchTab,
+            onReplayRoute = { assetFileName -> backStack.add(Playback(assetFileName)) },
+          )
+        }
         entry<ReplayList> {
           ReplayListScreen(
             currentTab = currentTab,

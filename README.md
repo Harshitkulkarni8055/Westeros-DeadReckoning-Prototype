@@ -43,15 +43,16 @@ reckoning drifts to ~95m error while the map-corrected + fused track stays
 within ~5-15m of ground truth (see `data/S1_demo.png`).
 
 ### Frontend (Android) — in progress
-`android/` is a Kotlin/Compose app that **replays** precomputed tracks from
-`export_track.py` on a phone screen — an interactive version of the same
-story `S1_demo.png` tells, with a moving vehicle marker, live
-speed/heading/confidence readouts, and a GPS/fusion status indicator. A
-landing screen lists three bundled replays (recordings S1, S3c, S3a — each
-a different route and outage window) to pick from. It does not read live
-sensors or run any model on-device; see `FRONTEND_PLAN.md` for why and
-what's still open (an outage-window highlight and a results summary
-screen).
+`android/` is a Kotlin/Compose app, restyled after a teammate's "Drift Nav"
+Figma prototype (see `FIGMA_REDESIGN_PLAN.md`), that **replays**
+precomputed tracks from `export_track.py` on a phone screen: a hero
+landing screen, a real device sensor/permission check, a real OpenStreetMap
+view of each bundled route, a Test Scenarios list (recordings S1, S3c, S3a
+— each a different route and outage window), the interactive replay itself
+with a moving vehicle marker and live speed/heading/confidence readouts,
+and a System Status tab reflecting whichever replay is actually open. It
+does not read live sensor *data* for navigation or run any model
+on-device; see `FRONTEND_PLAN.md` for the full scope and what's still open.
 
 Open `android/` in Android Studio, let Gradle sync, run on an emulator or
 device.

@@ -1,6 +1,7 @@
 package com.example.deadreckoning.ui.common
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
@@ -14,11 +15,12 @@ import androidx.compose.ui.Modifier
 import com.example.deadreckoning.theme.DriftMint
 import com.example.deadreckoning.theme.DriftNavyText
 
-/** The Figma design's bottom bar was Map / Replay / System / More; the Map
- * tab is dropped here since it needs live sensors + a real map SDK this
- * prototype doesn't have (see FIGMA_REDESIGN_PLAN.md's decisions).
+/** Matches the Figma design's Map / Replay / System / More bottom bar --
+ * unlike the first redesign pass, Map is now real (see ui/map/MapScreen.kt
+ * and FIGMA_REDESIGN_PLAN.md's revised decision).
  */
 enum class MainTab(val label: String) {
+  MAP("Map"),
   REPLAY("Replay"),
   SYSTEM("System"),
   MORE("More"),
@@ -27,6 +29,13 @@ enum class MainTab(val label: String) {
 @Composable
 fun DriftBottomBar(current: MainTab, onSelect: (MainTab) -> Unit, modifier: Modifier = Modifier) {
   NavigationBar(modifier = modifier) {
+    NavigationBarItem(
+      selected = current == MainTab.MAP,
+      onClick = { onSelect(MainTab.MAP) },
+      icon = { Icon(Icons.Filled.Place, contentDescription = null) },
+      label = { Text(MainTab.MAP.label) },
+      colors = tabColors(),
+    )
     NavigationBarItem(
       selected = current == MainTab.REPLAY,
       onClick = { onSelect(MainTab.REPLAY) },

@@ -67,13 +67,13 @@ over it.
 | Figma screen | Call | Why |
 |---|---|---|
 | Hero/landing | **Adopt** | Just a static entry screen + navigation, no live data needed. |
-| Permission checklist / "all set" | **Skip** | We don't read any sensors — checkmarks would be fabricated. Contradicts this repo's whole practice of labeling what's real vs. simulated (see `PLAN.md`/`FRONTEND_PLAN.md` callouts throughout). |
-| Live map + search + route sheet | **Defer** | Needs a real map SDK (Mapbox/Google Maps + API key) and live GPS — explicitly out of scope for the replay-only prototype. |
+| Permission checklist / "all set" | **Adopt, made real** (revised) | Originally skipped as fabricated checkmarks. Revised: `DeviceCheckScreen` performs a REAL runtime location-permission request plus actual `SensorManager` hardware checks (accelerometer+gyro, magnetometer, rotation vector) and network state — honest capability reporting, even though the app still doesn't use any of it for live navigation. |
+| Live map + search + route sheet | **Adopt, made real** (revised) | Originally deferred as needing a paid map SDK. Revised: `MapScreen` uses osmdroid (OpenStreetMap tiles, no API key) to show each bundled replay's actual recorded ground-truth path, with real distance/duration computed from the track data — not a fake "Riverside Park" pin. Still no live GPS position; this previews a route, `PlaybackScreen` plays one back. |
 | System Status | **Adapt** | Can build for real: derive each row from the *loaded replay's* actual data (e.g. GNSS row reflects `gps_available` at the current playback point) instead of hardcoding "Active". |
 | Test Scenarios | **Adopt** | Direct restyle of our existing `ReplayListScreen` — same content, new look. |
 | Scenario detail/playback | **Adopt** | Direct restyle of our existing `PlaybackScreen` — same content, new look. |
 | "How it works" modal | **Adopt, reworded** | Static and low-risk, but its copy describes the full proposal's aspirational pipeline (CNN-LSTM, learned fusion network) — needs rewriting to describe what *this prototype* actually runs (random forest, fixed-alpha fusion), or explicitly label it as "the target architecture" vs. "what's running now". |
-| Bottom tab bar (Map/Replay/System/More) | **Adapt** | Since Map is deferred, needs a decision — see Open Questions. |
+| Bottom tab bar (Map/Replay/System/More) | **Adopt** (revised) | Map tab restored now that `MapScreen` is real. All 4 tabs from the mock are present. |
 
 ## Proposed phased plan
 

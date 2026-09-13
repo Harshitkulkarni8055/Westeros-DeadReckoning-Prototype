@@ -85,4 +85,7 @@ dependencies {
 
   // Track data parsing (bundled asset JSON)
   implementation(libs.kotlinx.serialization.json)
+
+  // Live map (real OpenStreetMap tiles, no API key)
+  implementation(libs.osmdroid.android)
 }

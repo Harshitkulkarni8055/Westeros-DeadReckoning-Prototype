@@ -196,11 +196,40 @@ the design tokens pulled from a teammate's Figma prototype ("Drift Nav").
       smaller core set and were substituted with text glyphs rather than
       pulling in the much larger `material-icons-extended`)
 
+## F6 — Real device check + real live map — DONE
+Revises F5's "skip"/"defer" calls on two screens once it was clear a
+replay-only app that never shows device checks or a map felt too far from
+the Figma vision -- both are now real, not faked, per
+`FIGMA_REDESIGN_PLAN.md`'s revised decisions.
+- [x] `AndroidManifest.xml` — added `INTERNET`, `ACCESS_NETWORK_STATE`,
+      `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`
+- [x] `ui/onboarding/DeviceCheckScreen.kt` — real runtime location
+      permission request (`ActivityResultContracts.RequestPermission`)
+      plus real `SensorManager` hardware checks (accelerometer+gyro,
+      magnetometer, rotation vector) and real network state. Still doesn't
+      feed any of this into navigation -- it's an honest capability
+      report, not a promise of live functionality
+- [x] `ui/onboarding/AllSetScreen.kt` — confirmation screen after the
+      checklist, enters the tab shell on the Map tab
+- [x] `ui/map/MapScreen.kt` — real OpenStreetMap tiles via osmdroid (no
+      API key), with a chip row to pick among the 3 bundled replays and
+      that replay's actual recorded ground-truth path drawn as a polyline
+      with start/end markers. Distance and duration are computed for real
+      (haversine sum over the recorded lat/lon points, real elapsed time)
+      -- not the mock's fabricated "Riverside Park, 1.8km, 18min". A
+      "Replay this route" button hands off to the real `PlaybackScreen`.
+      No live position marker here (no live GPS) -- this screen previews a
+      recorded route, it doesn't play one back
+- [x] `ui/common/DriftBottomBar.kt` — Map tab restored (4 tabs total)
+- [x] New flow: `Hero` → `DeviceCheck` → `AllSet` → tab shell (Map tab
+      default) → `Replay`/`System`/`More` as before
+- [x] Added `org.osmdroid:osmdroid-android` dependency
+
 ## Explicitly out of scope for this frontend pass
-- Live sensor capture (accelerometer/gyro/mag/GPS) and permissions
+- Live sensor DATA capture for navigation (we now check sensors are
+  present, but still never read live values into the dead-reckoning math)
 - TFLite model loading / on-device inference
-- Real map tiles (osmdroid/Google Maps/Mapbox) — the Canvas plot is the
-  map for this prototype
+- Turn-by-turn routing, destination search/geocoding
 - Settings, accounts, persistence, anything beyond replay + summary
 - These are real frontend work for the full production app later, not
   this prototype pass.
