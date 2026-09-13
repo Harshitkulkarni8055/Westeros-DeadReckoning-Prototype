@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -98,22 +100,24 @@ fun DeviceCheckScreen(onContinue: () -> Unit, modifier: Modifier = Modifier) {
     )
 
   Column(modifier = modifier.fillMaxSize().background(DriftSurfaceLight).safeDrawingPadding().padding(24.dp)) {
-    Text("Before we begin", color = DriftNavyText, fontWeight = FontWeight.Bold, fontSize = 26.sp)
-    Spacer(Modifier.height(8.dp))
-    Text(
-      "A real check of this device's sensors -- it doesn't change what " +
-        "the replay shows, this prototype still doesn't read live sensor " +
-        "data for navigation.",
-      color = DriftBodyText,
-      fontSize = 14.sp,
-      lineHeight = 20.sp,
-    )
-    Spacer(Modifier.height(20.dp))
-    items.forEach { item ->
-      DeviceCheckRow(item)
-      Spacer(Modifier.height(12.dp))
+    Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+      Text("Before we begin", color = DriftNavyText, fontWeight = FontWeight.Bold, fontSize = 26.sp)
+      Spacer(Modifier.height(8.dp))
+      Text(
+        "A real check of this device's sensors -- it doesn't change what " +
+          "the replay shows, this prototype still doesn't read live sensor " +
+          "data for navigation.",
+        color = DriftBodyText,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+      )
+      Spacer(Modifier.height(20.dp))
+      items.forEach { item ->
+        DeviceCheckRow(item)
+        Spacer(Modifier.height(12.dp))
+      }
     }
-    Spacer(Modifier.weight(1f))
+    Spacer(Modifier.height(12.dp))
     Button(
       onClick = onContinue,
       modifier = Modifier.fillMaxWidth().height(56.dp),

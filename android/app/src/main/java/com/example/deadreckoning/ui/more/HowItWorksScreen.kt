@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -44,49 +46,51 @@ import com.example.deadreckoning.theme.DriftMint
 @Composable
 fun HowItWorksScreen(onClose: () -> Unit, modifier: Modifier = Modifier) {
   Column(modifier = modifier.fillMaxSize().background(DriftInk).safeDrawingPadding().padding(24.dp)) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-      Text(text = "How it works", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 24.sp)
-      IconButton(onClick = onClose) { Icon(Icons.Filled.Close, contentDescription = "Close", tint = DriftMint) }
-    }
-    Spacer(Modifier.height(4.dp))
-    Text(text = "This prototype's pipeline", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-    Spacer(Modifier.height(16.dp))
-    Card(
-      modifier = Modifier.fillMaxWidth(),
-      colors = CardDefaults.cardColors(containerColor = DriftInkElevated),
-      shape = RoundedCornerShape(20.dp),
-    ) {
-      Column(modifier = Modifier.padding(20.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-          PipelineIcon("IMU")
-          PipelineIcon("Gyro+Mag")
-          PipelineIcon("Speed RF")
-        }
-        Spacer(Modifier.height(16.dp))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-          PipelineBox("Dead\nReckoning", Modifier.weight(1f))
-          PipelineBox("Map Snap\n(nearest seg.)", Modifier.weight(1f))
-          PipelineBox("Fixed-α\nFusion", Modifier.weight(1f))
+    Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+      Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(text = "How it works", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 24.sp)
+        IconButton(onClick = onClose) { Icon(Icons.Filled.Close, contentDescription = "Close", tint = DriftMint) }
+      }
+      Spacer(Modifier.height(4.dp))
+      Text(text = "This prototype's pipeline", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+      Spacer(Modifier.height(16.dp))
+      Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = DriftInkElevated),
+        shape = RoundedCornerShape(20.dp),
+      ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+          Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+            PipelineIcon("IMU")
+            PipelineIcon("Gyro+Mag")
+            PipelineIcon("Speed RF")
+          }
+          Spacer(Modifier.height(16.dp))
+          Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PipelineBox("Dead\nReckoning", Modifier.weight(1f))
+            PipelineBox("Map Snap\n(nearest seg.)", Modifier.weight(1f))
+            PipelineBox("Fixed-α\nFusion", Modifier.weight(1f))
+          }
         }
       }
+      Spacer(Modifier.height(20.dp))
+      Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        StatChip("10 Hz", "Recording sample rate", Modifier.weight(1f))
+        StatChip("~1.5 m/s", "Speed predictor MAE", Modifier.weight(1f))
+      }
+      Spacer(Modifier.height(24.dp))
+      Text(
+        text =
+          "Random forest (not CNN-LSTM), nearest-segment snapping (not " +
+            "HMM/Viterbi), and a fixed 0.9/0.1 GPS blend (not a learned " +
+            "fusion network) -- the full proposal's targets, simplified for " +
+            "this prototype. See PLAN.md for the reasoning.",
+        color = DriftBodyText,
+        fontSize = 13.sp,
+        lineHeight = 19.sp,
+      )
     }
-    Spacer(Modifier.height(20.dp))
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-      StatChip("10 Hz", "Recording sample rate", Modifier.weight(1f))
-      StatChip("~1.5 m/s", "Speed predictor MAE", Modifier.weight(1f))
-    }
-    Spacer(Modifier.height(24.dp))
-    Text(
-      text =
-        "Random forest (not CNN-LSTM), nearest-segment snapping (not " +
-          "HMM/Viterbi), and a fixed 0.9/0.1 GPS blend (not a learned " +
-          "fusion network) -- the full proposal's targets, simplified for " +
-          "this prototype. See PLAN.md for the reasoning.",
-      color = DriftBodyText,
-      fontSize = 13.sp,
-      lineHeight = 19.sp,
-    )
-    Spacer(Modifier.height(24.dp))
+    Spacer(Modifier.height(12.dp))
     OutlinedButton(
       onClick = onClose,
       modifier = Modifier.fillMaxWidth().height(52.dp),

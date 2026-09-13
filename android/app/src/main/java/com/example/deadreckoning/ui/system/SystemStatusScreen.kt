@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
@@ -63,18 +65,20 @@ fun SystemStatusScreen(
     bottomBar = { DriftBottomBar(current = currentTab, onSelect = onTabSelected) },
   ) { padding ->
     Column(modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp)) {
-      Text(
-        text = "System Status",
-        color = Color.White,
-        fontWeight = FontWeight.Bold,
-        fontSize = 26.sp,
-      )
-      Spacer(Modifier.height(16.dp))
-      HeadlinePill(snapshot)
-      Spacer(Modifier.height(20.dp))
-      statusRows(snapshot).forEach { row ->
-        StatusRowCard(row)
-        Spacer(Modifier.height(12.dp))
+      Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+        Text(
+          text = "System Status",
+          color = Color.White,
+          fontWeight = FontWeight.Bold,
+          fontSize = 26.sp,
+        )
+        Spacer(Modifier.height(16.dp))
+        HeadlinePill(snapshot)
+        Spacer(Modifier.height(20.dp))
+        statusRows(snapshot).forEach { row ->
+          StatusRowCard(row)
+          Spacer(Modifier.height(12.dp))
+        }
       }
       Spacer(Modifier.height(12.dp))
       OutlinedButton(
