@@ -1,8 +1,11 @@
 # Dead Reckoning Prototype (SIH26168)
 
+
 A prototype for **AI/ML-Based Intelligent Dead Reckoning** (Smart India
 Hackathon 2026, problem statement SIH26168): GPS-denied vehicle navigation
 using phone IMU sensors, map matching, and GNSS/INS fusion.
+
+Check out the final figma design we are aiming for : https://www.figma.com/design/p1PYJkaLRo4GAwO3HzXxWY/Drift-Nav-%E2%80%94-GPS-Denied-Navigation?node-id=0-1&t=f1E7IiPutArrur6D-1
 
 This is a cut-down **proof of concept**, not the full production system
 described in the proposal. It answers one question: *does the core idea
